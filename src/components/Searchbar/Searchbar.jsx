@@ -1,5 +1,5 @@
 import { Notify } from 'notiflix';
-import { Component } from 'react';
+import { useState } from 'react';
 import {
   SearchbarHeader,
   SearchForm,
@@ -8,46 +8,42 @@ import {
   SearchFormInput,
 } from './Searchbar.styled';
 
-export default class Searchbar extends Component {
-  state = {
-    inputQuery: '',
+export default function Searchbar({ onSubmit }) {
+  const [inputQuery, setInputQuery] = useState('');
+
+  const handleInputQuery = e => {
+    setInputQuery(e.currentTarget.value.toLowerCase());
   };
 
-  handleInputQuery = e => {
-    this.setState({ inputQuery: e.currentTarget.value.toLowerCase() });
-  };
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
-    if (this.state.inputQuery.trim() === '') {
+    if (inputQuery.trim() === '') {
       Notify.info('Enter your request');
       return;
     }
-    this.props.onSubmit(this.state.inputQuery.trim());
-    this.setState({ inputQuery: '' });
+    onSubmit(inputQuery.trim());
+    setInputQuery('');
   };
 
-  render() {
-    return (
-      <div>
-        <SearchbarHeader>
-          <SearchForm onSubmit={this.handleSubmit}>
-            <SearchFormButton type="submit">
-              <SearchFormButtonLabel>Search</SearchFormButtonLabel>
-            </SearchFormButton>
+  return (
+    <div>
+      <SearchbarHeader>
+        <SearchForm onSubmit={handleSubmit}>
+          <SearchFormButton type="submit">
+            <SearchFormButtonLabel>Search</SearchFormButtonLabel>
+          </SearchFormButton>
 
-            <SearchFormInput
-              className="input"
-              type="text"
-              autoComplete="off"
-              autoFocus
-              placeholder="Search images and photos"
-              onChange={this.handleInputQuery}
-              value={this.state.inputQuery}
-            />
-          </SearchForm>
-        </SearchbarHeader>
-      </div>
-    );
-  }
+          <SearchFormInput
+            className="input"
+            type="text"
+            autoComplete="off"
+            autoFocus
+            placeholder="Search images and photos"
+            onChange={handleInputQuery}
+            value={inputQuery}
+          />
+        </SearchForm>
+      </SearchbarHeader>
+    </div>
+  );
 }

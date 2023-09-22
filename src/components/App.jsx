@@ -1,41 +1,47 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import { getPhotosService } from 'api/api';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import Loader from './Loader/Loader';
-import Modal from './Modal/Modal';
+import { Modal } from './Modal/Modal';
 import StyledApp from 'App.styled';
 import Button from './Button/Button';
 
-export default class App extends Component {
-  state = {
-    searchQuery: '',
-    gallery: [],
-    currentPage: 1,
-    quantityPage: null,
-    error: null,
-    isLoading: false,
-    showModal: false,
-    largeImageURL: null,
-    tags: null,
-  };
+export default function App() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [gallery, setGallery] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quantityPage, setQuantityPage] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState(null);
+  const [tags, setTags] = useState(null);
 
-  componentDidUpdate(_, prevState) {
-    if (
-      this.state.currentPage !== prevState.currentPage ||
-      this.state.searchQuery !== prevState.searchQuery
-    ) {
-      this.fetchGallery();
+  // componentDidUpdate(_, prevState) {
+  //   if (
+  //     this.state.currentPage !== prevState.currentPage ||
+  //     this.state.searchQuery !== prevState.searchQuery
+  //   ) {
+  //     this.fetchGallery();
+  //   }
+  // }
+
+  useEffect(() => {
+    if (!searchQuery) {
+      return;
     }
-  }
+    fetchGallery();
+    console.log('currentPage :>> ', currentPage);
+  }, [currentPage, searchQuery]);
 
-  fetchGallery = async () => {
-    this.setState({ isLoading: true });
+  const fetchGallery = async () => {
+    setIsLoading(true);
     try {
       const { hits, totalHits } = await getPhotosService(
-        this.state.searchQuery,
-        this.state.currentPage
+        searchQuery,
+        currentPage
       );
 
       if (!hits.length) {
@@ -45,74 +51,64 @@ export default class App extends Component {
         return;
       }
       if (hits.length > 0) {
-        this.setState(prev => ({
-          gallery: [...prev.gallery, ...hits],
-          quantityPage: Math.ceil(totalHits / 12),
-        }));
+        setGallery(prev => [...prev, ...hits]);
+        setQuantityPage(Math.ceil(totalHits / 12));
+        // this.setState(prev => ({
+        //   gallery: [...prev.gallery, ...hits],
+        //   quantityPage: Math.ceil(totalHits / 12),
+        // }));
       }
     } catch (err) {
-      this.setState({ error: err.message });
+      setError(err.message);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  handleFormSubmit = searchQuery => {
-    this.setState({
-      currentPage: 1,
-      quantityPage: null,
-      gallery: [],
-      error: null,
-      searchQuery,
-    });
+  const handleFormSubmit = searchQuery => {
+    setCurrentPage(1);
+    setQuantityPage(null);
+    setGallery([]);
+    setQuantityPage(null);
+    setSearchQuery(searchQuery);
   };
 
-  handleModal = obj => {
-    this.setState({ isLoading: true, showModal: true, ...obj });
+  const handleModal = obj => {
+    // this.setState({ isLoading: true, showModal: true, ...obj });
+    setIsLoading(false);
+    setShowModal(true);
+    setLargeImageURL(obj.largeImageURL);
+    setTags(obj.tags);
   };
 
-  handleCloseModal = () => {
-    this.setState({ isLoading: false, showModal: false });
+  const handleCloseModal = () => {
+    // this.setState({ isLoading: false, showModal: false });
+    setIsLoading(false);
+    setShowModal(false);
   };
 
-  handleBtnLoad = () => {
-    this.setState(prev => ({
-      currentPage: prev.currentPage + 1,
-    }));
+  const handleBtnLoad = () => {
+    setCurrentPage(prev => prev + 1);
   };
 
-  render() {
-    const {
-      error,
-      gallery,
-      isLoading,
-      showModal,
-      largeImageURL,
-      tags,
-      currentPage,
-      quantityPage,
-    } = this.state;
+  return (
+    <StyledApp>
+      <Searchbar onSubmit={handleFormSubmit} />
+      {isLoading && <Loader />}
+      {error && Notify.failure(error)}
+      {gallery && gallery.length > 0 && (
+        <ImageGallery hits={gallery} onClick={handleModal} />
+      )}
+      {currentPage < quantityPage && <Button handleBtnLoad={handleBtnLoad} />}
 
-    return (
-      <StyledApp>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {isLoading && <Loader />}
-        {error && Notify.failure(error)}
-        {gallery && gallery.length > 0 && (
-          <ImageGallery hits={gallery} onClick={this.handleModal} />
-        )}
-        {currentPage < quantityPage && (
-          <Button handleBtnLoad={this.handleBtnLoad} />
-        )}
-
-        {showModal && (
-          <Modal
-            largeImageURL={largeImageURL}
-            tags={tags}
-            handleCloseModal={this.handleCloseModal}
-          />
-        )}
-      </StyledApp>
-    );
-  }
+      {showModal && (
+        <Modal
+          largeImageURL={largeImageURL}
+          tags={tags}
+          showModal={showModal}
+          handleCloseModal={handleCloseModal}
+        />
+      )}
+    </StyledApp>
+  );
 }
