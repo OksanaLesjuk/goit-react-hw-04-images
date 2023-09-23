@@ -19,51 +19,36 @@ export default function App() {
   const [largeImageURL, setLargeImageURL] = useState(null);
   const [tags, setTags] = useState(null);
 
-  // componentDidUpdate(_, prevState) {
-  //   if (
-  //     this.state.currentPage !== prevState.currentPage ||
-  //     this.state.searchQuery !== prevState.searchQuery
-  //   ) {
-  //     this.fetchGallery();
-  //   }
-  // }
-
   useEffect(() => {
     if (!searchQuery) {
       return;
     }
-    fetchGallery();
-    console.log('currentPage :>> ', currentPage);
-  }, [currentPage, searchQuery]);
-
-  const fetchGallery = async () => {
-    setIsLoading(true);
-    try {
-      const { hits, totalHits } = await getPhotosService(
-        searchQuery,
-        currentPage
-      );
-
-      if (!hits.length) {
-        Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.'
+    const fetchGallery = async () => {
+      setIsLoading(true);
+      try {
+        const { hits, totalHits } = await getPhotosService(
+          searchQuery,
+          currentPage
         );
-        return;
+
+        if (!hits.length) {
+          Notify.failure(
+            'Sorry, there are no images matching your search query. Please try again.'
+          );
+          return;
+        }
+        if (hits.length > 0) {
+          setGallery(prev => [...prev, ...hits]);
+          setQuantityPage(Math.ceil(totalHits / 12));
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
       }
-      if (hits.length > 0) {
-        setGallery(prev => [...prev, ...hits]);
-        setQuantityPage(Math.ceil(totalHits / 12));
-        // this.setState(prev => ({
-        //   gallery: [...prev.gallery, ...hits],
-        //   quantityPage: Math.ceil(totalHits / 12),
-        // }));
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    fetchGallery();
+  }, [currentPage, searchQuery]);
 
   const handleFormSubmit = searchQuery => {
     setCurrentPage(1);
@@ -74,7 +59,6 @@ export default function App() {
   };
 
   const handleModal = obj => {
-    // this.setState({ isLoading: true, showModal: true, ...obj });
     setIsLoading(false);
     setShowModal(true);
     setLargeImageURL(obj.largeImageURL);
@@ -82,7 +66,6 @@ export default function App() {
   };
 
   const handleCloseModal = () => {
-    // this.setState({ isLoading: false, showModal: false });
     setIsLoading(false);
     setShowModal(false);
   };
